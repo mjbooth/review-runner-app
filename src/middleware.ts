@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   '/auth/sign-in(.*)',
   '/auth/sign-up(.*)',
   '/api/webhooks(.*)',
+  '/r(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
@@ -17,8 +18,8 @@ export default clerkMiddleware(async (auth, request) => {
       // Logged in users go to dashboard
       return NextResponse.redirect(new URL('/dashboard', request.url));
     } else {
-      // Not logged in users go to sign-in
-      return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+      // Not logged in users go to sign-up
+      return NextResponse.redirect(new URL('/auth/sign-up', request.url));
     }
   }
 
@@ -43,8 +44,8 @@ export default clerkMiddleware(async (auth, request) => {
       );
     }
 
-    // For regular pages, redirect to sign-in
-    return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+    // For regular pages, redirect to sign-up
+    return NextResponse.redirect(new URL('/auth/sign-up', request.url));
   }
 
   return NextResponse.next();
