@@ -134,8 +134,10 @@ export function canSendToCustomer(
   return false;
 }
 
-export function generateTrackingUrl(baseUrl: string, uuid: string): string {
-  return `${baseUrl}/r/${uuid}`;
+export function generateTrackingUrl(baseUrl: string, uuid: string, instant: boolean = true): string {
+  const trackingDomain = 'https://track.review-runner.co.uk';
+  const url = `${trackingDomain}/${uuid}`;
+  return instant ? `${url}?instant=true` : url;
 }
 
 export function generateUnsubscribeUrl(baseUrl: string, uuid: string): string {

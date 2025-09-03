@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Analytics', href: '/analytics' },
+  { name: 'Scheduled Messages', href: '/dashboard/scheduled-emails' },
   { name: 'Settings', href: '/settings' },
 ];
 

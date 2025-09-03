@@ -12,7 +12,7 @@ import {
 import { sendGridService, renderMessage, createPersonalizationData } from '@/services/messaging';
 // MVP: Skip worker initialization - using direct API calls
 // import { ensureWorkersInitialized } from '@/lib/initialize-workers';
-// import { addJobToQueue } from '@/services/job-queue';
+import { addJobToQueue } from '@/services/job-queue';
 
 // MVP: Initialize workers on first API request
 // ensureWorkersInitialized();
@@ -1336,6 +1336,7 @@ async function createSingleRequest(business: any, body: any) {
     const createData: any = {
       businessId: business.id,
       customerId: validatedData.customerId,
+      templateId: validatedData.templateId || null, // Include templateId in create data
       channel: validatedData.channel,
       subject: validatedData.subject,
       messageContent: validatedData.messageContent,

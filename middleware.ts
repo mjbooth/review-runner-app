@@ -1,30 +1,29 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-export async function middleware(request: NextRequest) {
-  // Skip middleware for static files
-  if (
-    request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.startsWith('/favicon') ||
-    request.nextUrl.pathname.includes('.')
-  ) {
-    return NextResponse.next();
+// Define public routes that don't require authentication
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/r(.*)',
+  '/api/webhooks(.*)', 
+  '/auth(.*)',
+]);
+
+export default clerkMiddleware(async (auth, req) => {
+  console.log('🔥 Clerk middleware processing:', req.nextUrl.pathname);
+  
+  if (!isPublicRoute(req)) {
+    console.log('🔒 Protecting route:', req.nextUrl.pathname);
+    await auth.protect();
+  } else {
+    console.log('🌍 Public route, allowing access:', req.nextUrl.pathname);
   }
-
-  // Simplified middleware for MVP - just pass through requests
-  return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/webhooks (webhooks should not require authentication)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public (public files)
-     */
-    '/((?!api/webhooks|_next/static|_next/image|favicon.ico|public).*)',
+    // Skip Next.js internals, static files, and tracking routes
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)|api/track|track).*)',
+    // Run for other API routes but exclude tracking
+    '/(api|trpc)(?!/track)(.*)',
   ],
 };

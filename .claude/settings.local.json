@@ -100,7 +100,11 @@
       "Read(/Users/mattb/Downloads/**)",
       "Read(/Users/mattb/Downloads/**)",
       "Read(/Users/mattb/Downloads/**)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Read(/Users/mattb/Downloads/**)",
+      "Read(/Users/mattb/Downloads/**)",
+      "Read(/Users/mattb/Downloads/**)",
+      "Read(/Users/mattb/Downloads/**)"
     ],
     "deny": []
   }

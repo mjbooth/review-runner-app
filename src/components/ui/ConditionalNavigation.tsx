@@ -6,10 +6,11 @@ import { TopNavigation } from './TopNavigation';
 export function ConditionalNavigation() {
   const pathname = usePathname();
 
-  // Hide navigation on auth pages
+  // Hide navigation on auth pages and tracking URLs
   const isAuthPage = pathname.startsWith('/auth/');
+  const isTrackingUrl = pathname.startsWith('/r/');
 
-  if (isAuthPage) {
+  if (isAuthPage || isTrackingUrl) {
     return null;
   }
 

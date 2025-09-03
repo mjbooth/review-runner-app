@@ -101,7 +101,7 @@ export function BusinessProfileSection({ businessData }: BusinessProfileSectionP
                         type="text"
                         value={businessData.googlePlaceName || businessData.name}
                         readOnly
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
+                        className="flex-1 px-3 py-2 border-0 rounded-lg bg-gray-100 text-gray-700 cursor-default"
                       />
                       <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                         Google Places
@@ -116,7 +116,7 @@ export function BusinessProfileSection({ businessData }: BusinessProfileSectionP
                         value={businessData.address || 'Not provided'}
                         readOnly
                         rows={2}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 resize-none"
+                        className="flex-1 px-3 py-2 border-0 rounded-lg bg-gray-100 text-gray-700 resize-none cursor-default"
                       />
                       <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded h-fit">
                         Google Places
@@ -134,7 +134,7 @@ export function BusinessProfileSection({ businessData }: BusinessProfileSectionP
                             businessData.googlePhoneNumber || businessData.phone || 'Not provided'
                           }
                           readOnly
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
+                          className="flex-1 px-3 py-2 border-0 rounded-lg bg-gray-100 text-gray-700 cursor-default"
                         />
                         <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                           Google
@@ -153,7 +153,7 @@ export function BusinessProfileSection({ businessData }: BusinessProfileSectionP
                             businessData.googleWebsite || businessData.website || 'Not provided'
                           }
                           readOnly
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
+                          className="flex-1 px-3 py-2 border-0 rounded-lg bg-gray-100 text-gray-700 cursor-default"
                         />
                         <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                           Google
@@ -204,7 +204,7 @@ export function BusinessProfileSection({ businessData }: BusinessProfileSectionP
                         type="text"
                         value={businessData.timezone || 'Europe/London'}
                         readOnly
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                        className="w-full px-3 py-2 border-0 rounded-lg bg-gray-100 text-gray-700 cursor-default"
                       />
                     </div>
                     {businessData.googleMapsUrl && (

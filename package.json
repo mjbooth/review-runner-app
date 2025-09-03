@@ -32,6 +32,7 @@
     "redis:status": "./scripts/redis.sh status",
     "redis:logs": "./scripts/redis.sh logs",
     "redis:cli": "./scripts/redis.sh cli",
+    "scheduler": "node scheduler-worker.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {

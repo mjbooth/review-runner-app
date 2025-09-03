@@ -54,8 +54,6 @@ export default function DashboardPage() {
     }
 
     try {
-      console.log('Fetching dashboard stats from API...');
-
       // Fetch real data from multiple endpoints
       const [customersResponse, reviewRequestsResponse] = await Promise.all([
         fetch(`${API_BASE}/api/customers`, {
