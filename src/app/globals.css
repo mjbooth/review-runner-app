@@ -1,0 +1,186 @@
+@import '../styles/design-tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-basewarm-50 text-slate-900;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply btn bg-slate-200 text-slate-900 hover:bg-slate-300 focus:ring-slate-500;
+  }
+
+  .btn-danger {
+    @apply btn bg-error-600 text-white hover:bg-error-700 focus:ring-error-500;
+  }
+
+  .card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+  }
+
+  .form-input {
+    @apply block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500;
+  }
+
+  .form-textarea {
+    @apply form-input resize-none;
+  }
+
+  .form-select {
+    @apply form-input pr-10 bg-white;
+  }
+
+  .form-checkbox {
+    @apply rounded border-slate-300 text-primary-600 focus:ring-primary-500;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-emerald-50 text-emerald-700 border border-emerald-200;
+  }
+
+  .badge-warning {
+    @apply badge bg-amber-50 text-amber-700 border border-amber-200;
+  }
+
+  .badge-error {
+    @apply badge bg-red-50 text-red-700 border border-red-200;
+  }
+
+  .badge-gray {
+    @apply badge bg-slate-100 text-slate-600 border border-slate-200;
+  }
+
+  /* ==============================================
+     RESPONSIVE GRID SYSTEM
+     ============================================== */
+  
+  /* Base Grid Container */
+  .grid-container {
+    display: grid;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  /* Mobile Grid: 4 columns, 16px gap, 16px margins */
+  .grid-container {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem; /* 16px */
+    padding-left: 1rem; /* 16px */
+    padding-right: 1rem; /* 16px */
+  }
+
+  /* Tablet Grid: 8 columns, 20px gap, 24px margins */
+  @media (min-width: 768px) {
+    .grid-container {
+      grid-template-columns: repeat(8, 1fr);
+      gap: 1.25rem; /* 20px */
+      padding-left: 1.5rem; /* 24px */
+      padding-right: 1.5rem; /* 24px */
+    }
+  }
+
+  /* Desktop Grid: 12 columns, 24px gap, 32px margins */
+  @media (min-width: 1024px) {
+    .grid-container {
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1.5rem; /* 24px */
+      padding-left: 2rem; /* 32px */
+      padding-right: 2rem; /* 32px */
+    }
+  }
+
+  /* Large Desktop Grid: 12 columns, 24px gap, 40px margins */
+  @media (min-width: 1280px) {
+    .grid-container {
+      gap: 1.5rem; /* 24px */
+      padding-left: 2.5rem; /* 40px */
+      padding-right: 2.5rem; /* 40px */
+    }
+  }
+
+  /* Extra Large Grid: 12 columns, 24px gap, 48px margins */
+  @media (min-width: 1440px) {
+    .grid-container {
+      gap: 1.5rem; /* 24px */
+      padding-left: 3rem; /* 48px */
+      padding-right: 3rem; /* 48px */
+    }
+  }
+
+  /* ==============================================
+     GRID COLUMN UTILITIES
+     ============================================== */
+  
+  /* Mobile Column Spans (4 columns) */
+  .col-span-1 { grid-column: span 1; }
+  .col-span-2 { grid-column: span 2; }
+  .col-span-3 { grid-column: span 3; }
+  .col-span-4 { grid-column: span 4; }
+  .col-span-full { grid-column: 1 / -1; }
+
+  /* Tablet Column Spans (8 columns) */
+  @media (min-width: 768px) {
+    .md\\:col-span-1 { grid-column: span 1; }
+    .md\\:col-span-2 { grid-column: span 2; }
+    .md\\:col-span-3 { grid-column: span 3; }
+    .md\\:col-span-4 { grid-column: span 4; }
+    .md\\:col-span-5 { grid-column: span 5; }
+    .md\\:col-span-6 { grid-column: span 6; }
+    .md\\:col-span-7 { grid-column: span 7; }
+    .md\\:col-span-8 { grid-column: span 8; }
+    .md\\:col-span-full { grid-column: 1 / -1; }
+  }
+
+  /* Desktop Column Spans (12 columns) */
+  @media (min-width: 1024px) {
+    .lg\\:col-span-1 { grid-column: span 1; }
+    .lg\\:col-span-2 { grid-column: span 2; }
+    .lg\\:col-span-3 { grid-column: span 3; }
+    .lg\\:col-span-4 { grid-column: span 4; }
+    .lg\\:col-span-5 { grid-column: span 5; }
+    .lg\\:col-span-6 { grid-column: span 6; }
+    .lg\\:col-span-7 { grid-column: span 7; }
+    .lg\\:col-span-8 { grid-column: span 8; }
+    .lg\\:col-span-9 { grid-column: span 9; }
+    .lg\\:col-span-10 { grid-column: span 10; }
+    .lg\\:col-span-11 { grid-column: span 11; }
+    .lg\\:col-span-12 { grid-column: span 12; }
+    .lg\\:col-span-full { grid-column: 1 / -1; }
+  }
+
+  /* ==============================================
+     LEGACY COMPATIBILITY
+     ============================================== */
+     
+  /* Keep existing 12-column grid for backward compatibility */
+  .grid-12-col {
+    @apply grid-container lg:grid-cols-12;
+  }
+
+  /* Keep existing container for backward compatibility */
+  .container-1440 {
+    @apply grid-container;
+  }
+}

@@ -1,0 +1,131 @@
+/* Design Tokens - Update these based on Figma specifications */
+
+:root {
+  /* Context Menu - Figma Specifications */
+  --context-menu-bg: #f9f7f3;
+  --context-menu-border: none;
+  --context-menu-shadow:
+    0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --context-menu-radius: 16px;
+  --context-menu-padding-y: 6px;
+  --context-menu-min-width: 200px;
+  --context-menu-max-width: 200px;
+
+  /* Menu Items - Figma Specifications */
+  --menu-item-padding-x: 6px;
+  --menu-item-padding-y: 2px;
+  --menu-item-font-size: 14px;
+  --menu-item-font-weight: 300;
+  --menu-item-line-height: 1.4;
+  --menu-item-icon-gap: 12px;
+  --menu-item-border-radius: 8px;
+
+  /* Menu Item States - Figma Specifications */
+  --menu-item-text-default: #272421;
+  --menu-item-text-disabled: rgba(39, 36, 33, 0.4);
+  --menu-item-bg-hover: rgba(39, 36, 33, 0.05);
+  --menu-item-bg-focus: rgba(39, 36, 33, 0.1);
+  --menu-item-text-focus: #272421;
+  --menu-item-bg-highlighted: rgba(39, 36, 33, 0.1);
+
+  /* Icons - Figma Specifications */
+  --menu-icon-size: 24px;
+  --menu-icon-stroke-width: 1.5px;
+  --menu-icon-color-default: #001e44;
+  --menu-icon-color-disabled: rgba(39, 36, 33, 0.4);
+  --menu-icon-color-focus: #272421;
+  --menu-icon-color-highlighted: #272421;
+
+  /* Separators - Figma Specifications */
+  --menu-separator-color: rgba(39, 36, 33, 0.1);
+  --menu-separator-thickness: 1px;
+  --menu-separator-margin-y: 4px;
+  --menu-separator-margin-x: 6px;
+
+  /* Table Styling */
+  --table-bg: #ffffff;
+  --table-border: rgba(79, 77, 74, 0.29);
+  --table-border-radius: 8px;
+  --table-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+
+  /* Table Rows */
+  --table-row-height: 37px;
+  --table-row-bg-default: #ffffff;
+  --table-row-bg-hover: #f9fafb;
+  --table-row-bg-scheduled: #fef3c7;
+  --table-row-bg-scheduled-hover: #fde68a;
+  --table-row-bg-selected: #eff6ff;
+  --table-row-border: rgba(79, 77, 74, 0.29);
+
+  /* Typography */
+  --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 24px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+
+  /* Spacing Scale */
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+
+  /* Color Palette */
+  --color-white: #ffffff;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+
+  --color-orange-50: #fff7ed;
+  --color-orange-100: #ffedd5;
+  --color-orange-200: #fed7aa;
+  --color-orange-300: #fdba74;
+  --color-orange-400: #fb923c;
+
+  /* Scheduled State Colors (Figma-accurate Amber/Yellow) */
+  --color-scheduled-bg: #fffbeb;
+  --color-scheduled-hover: #fef3c7;
+  --color-scheduled-border: #f59e0b;
+  --color-scheduled-accent: #d97706;
+
+  /* Shadows */
+  --shadow-sm: 0px 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0px 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0px 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0px 20px 25px rgba(0, 0, 0, 0.1);
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}

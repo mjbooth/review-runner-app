@@ -1,0 +1,314 @@
+// Updated Prisma schema with PII encryption support
+// This shows the target schema after migration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Business {
+  id                String   @id @default(uuid())
+  clerkUserId       String   @unique @map("clerk_user_id")
+  name              String
+  email             String
+  phone             String?
+  address           String?
+  website           String?
+  googlePlaceId     String?  @map("google_place_id")
+  googlePlaceName   String?  @map("google_place_name")
+  googleReviewUrl   String?  @map("google_review_url")
+  timezone          String   @default("Europe/London")
+  smsCreditsUsed    Int      @default(0) @map("sms_credits_used")
+  smsCreditsLimit   Int      @default(1000) @map("sms_credits_limit")
+  emailCreditsUsed  Int      @default(0) @map("email_credits_used")
+  emailCreditsLimit Int      @default(5000) @map("email_credits_limit")
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  customers      Customer[]
+  reviewRequests ReviewRequest[]
+  suppressions   Suppression[]
+  events         Event[]
+
+  @@map("businesses")
+}
+
+model Customer {
+  id          String   @id @default(uuid())
+  businessId  String   @map("business_id")
+  
+  // Legacy fields (kept during migration period)
+  firstName   String?   @map("first_name")
+  lastName    String?   @map("last_name")
+  email       String?
+  phone       String?
+  
+  // NEW: Encrypted PII fields
+  firstNameEncrypted String? @map("first_name_encrypted") // JSON string of EncryptedField
+  lastNameEncrypted  String? @map("last_name_encrypted")  // JSON string of EncryptedField
+  emailEncrypted     String? @map("email_encrypted")     // JSON string of EncryptedField
+  phoneEncrypted     String? @map("phone_encrypted")     // JSON string of EncryptedField
+  
+  // NEW: Search hash indexes for encrypted fields
+  emailSearchHash     String? @map("email_search_hash")     // For exact email lookups
+  phoneSearchHash     String? @map("phone_search_hash")     // For exact phone lookups
+  firstNameSearchHash String? @map("first_name_search_hash") // For exact first name lookups
+  lastNameSearchHash  String? @map("last_name_search_hash")  // For exact last name lookups
+  
+  // NEW: Combined search hash for full name searches
+  fullNameSearchHash  String? @map("full_name_search_hash")  // For "John Doe" searches
+  
+  // NEW: Encryption metadata
+  encryptionVersion   Int?     @default(1) @map("encryption_version") // Track encryption key version
+  encryptedAt         DateTime? @map("encrypted_at")                 // When encryption was applied
+  
+  // Unencrypted fields (safe for queries and operations)
+  address     String?
+  notes       String?
+  tags        String[] @default([])
+  lastContact DateTime? @map("last_contact")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  business       Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reviewRequests ReviewRequest[]
+
+  // Indexes - Updated for encrypted fields
+  @@index([businessId])
+  @@index([emailSearchHash])          // Fast email lookups
+  @@index([phoneSearchHash])          // Fast phone lookups
+  @@index([firstNameSearchHash])      // Fast first name lookups
+  @@index([lastNameSearchHash])       // Fast last name lookups
+  @@index([fullNameSearchHash])       // Fast full name lookups
+  @@index([encryptionVersion])        // For key rotation queries
+  @@index([createdAt])               // For pagination and sorting
+  @@index([businessId, createdAt])   // Composite index for business + time queries
+  @@index([businessId, emailSearchHash]) // Business-scoped email lookups
+  @@index([businessId, phoneSearchHash]) // Business-scoped phone lookups
+  
+  // Legacy indexes (will be removed after migration)
+  @@index([email])
+  @@index([phone])
+  
+  @@map("customers")
+}
+
+enum RequestChannel {
+  SMS
+  EMAIL
+}
+
+enum RequestStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  CLICKED
+  BOUNCED
+  FAILED
+  OPTED_OUT
+  COMPLETED
+  FOLLOWUP_SENT
+}
+
+model ReviewRequest {
+  id              String        @id @default(uuid())
+  businessId      String        @map("business_id")
+  customerId      String        @map("customer_id")
+  channel         RequestChannel
+  status          RequestStatus @default(QUEUED)
+  subject         String?       // For emails
+  messageContent  String        @map("message_content")
+  reviewUrl       String        @map("review_url")
+  trackingUrl     String        @unique @map("tracking_url")
+  trackingUuid    String        @unique @map("tracking_uuid")
+  scheduledFor    DateTime?     @map("scheduled_for")
+  sentAt          DateTime?     @map("sent_at")
+  deliveredAt     DateTime?     @map("delivered_at")
+  clickedAt       DateTime?     @map("clicked_at")
+  completedAt     DateTime?     @map("completed_at")
+  followupSentAt  DateTime?     @map("followup_sent_at")
+  externalId      String?       @map("external_id") // Twilio/SendGrid message ID
+  errorMessage    String?       @map("error_message")
+  retryCount      Int           @default(0) @map("retry_count")
+  metadata        Json?         // Additional tracking data
+  isActive        Boolean       @default(true) @map("is_active")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relationships
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  events   Event[]
+
+  // Indexes
+  @@index([businessId])
+  @@index([customerId])
+  @@index([status])
+  @@index([trackingUuid])
+  @@index([scheduledFor])
+  @@index([createdAt])
+  @@map("review_requests")
+}
+
+enum EventType {
+  REQUEST_CREATED
+  REQUEST_QUEUED
+  REQUEST_SENT
+  REQUEST_DELIVERED
+  REQUEST_BOUNCED
+  REQUEST_FAILED
+  REQUEST_CLICKED
+  REQUEST_COMPLETED
+  REQUEST_OPTED_OUT
+  FOLLOWUP_SENT
+  WEBHOOK_RECEIVED
+  SUPPRESSION_ADDED
+  ERROR_OCCURRED
+  
+  // NEW: Encryption-related events
+  PII_ENCRYPTED
+  PII_DECRYPTED
+  KEY_ROTATED
+  ENCRYPTION_MIGRATED
+}
+
+model Event {
+  id              String    @id @default(uuid())
+  businessId      String    @map("business_id")
+  reviewRequestId String?   @map("review_request_id")
+  type            EventType
+  source          String    // 'system', 'twilio', 'sendgrid', 'user', 'encryption'
+  description     String
+  metadata        Json?     // Event-specific data
+  ipAddress       String?   @map("ip_address")
+  userAgent       String?   @map("user_agent")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relationships
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reviewRequest ReviewRequest? @relation(fields: [reviewRequestId], references: [id], onDelete: SetNull)
+
+  // Indexes
+  @@index([businessId])
+  @@index([reviewRequestId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("events")
+}
+
+enum SuppressionReason {
+  SMS_STOP
+  EMAIL_UNSUBSCRIBE
+  EMAIL_BOUNCE
+  EMAIL_SPAM_COMPLAINT
+  MANUAL
+  GDPR_REQUEST
+}
+
+model Suppression {
+  id         String            @id @default(uuid())
+  businessId String            @map("business_id")
+  contact    String            // Email or phone number (will remain unencrypted for matching)
+  
+  // NEW: Search hash for encrypted contact matching
+  contactSearchHash String? @map("contact_search_hash") // Hash of contact for encrypted lookups
+  
+  channel    RequestChannel?   // If null, suppressed for all channels
+  reason     SuppressionReason
+  source     String            // Where the suppression came from
+  notes      String?
+  expiresAt  DateTime?         @map("expires_at") // For temporary suppressions
+  isActive   Boolean           @default(true) @map("is_active")
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+
+  // Relationships
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([businessId])
+  @@index([contact])
+  @@index([contactSearchHash]) // NEW: For encrypted contact lookups
+  @@index([channel])
+  @@unique([businessId, contact, channel])
+  @@unique([businessId, contactSearchHash, channel]) // NEW: Unique constraint for encrypted contacts
+  @@map("suppressions")
+}
+
+// Job queue tracking (optional - BullMQ handles most of this)
+model JobExecution {
+  id          String    @id @default(uuid())
+  jobId       String    @unique @map("job_id")
+  jobName     String    @map("job_name")
+  status      String    // 'waiting', 'active', 'completed', 'failed'
+  data        Json?
+  result      Json?
+  error       String?
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3) @map("max_attempts")
+  delay       Int?      // Delay in ms
+  processedAt DateTime? @map("processed_at")
+  completedAt DateTime? @map("completed_at")
+  failedAt    DateTime? @map("failed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Indexes
+  @@index([jobName])
+  @@index([status])
+  @@index([createdAt])
+  @@map("job_executions")
+}
+
+// NEW: Encryption key rotation tracking
+model EncryptionKeyVersion {
+  id              Int       @id @default(autoincrement())
+  version         Int       @unique
+  algorithm       String    @default("aes-256-gcm")
+  keyDerivationAlg String   @default("pbkdf2") @map("key_derivation_alg")
+  iterations      Int       @default(100000)
+  isActive        Boolean   @default(false) @map("is_active")
+  rotatedAt       DateTime  @default(now()) @map("rotated_at")
+  deactivatedAt   DateTime? @map("deactivated_at")
+  
+  // Metadata
+  rotatedBy       String?   @map("rotated_by") // User who triggered rotation
+  reason          String?   // Reason for rotation
+  affectedRecords Int?      @default(0) @map("affected_records") // Number of records using this key
+  
+  @@index([version])
+  @@index([isActive])
+  @@index([rotatedAt])
+  @@map("encryption_key_versions")
+}
+
+// NEW: Migration tracking for encryption rollout
+model EncryptionMigration {
+  id              String    @id @default(uuid())
+  tableName       String    @map("table_name")
+  fieldName       String    @map("field_name")
+  businessId      String?   @map("business_id") // Track per-business if needed
+  totalRecords    Int       @map("total_records")
+  migratedRecords Int       @default(0) @map("migrated_records")
+  failedRecords   Int       @default(0) @map("failed_records")
+  status          String    @default("pending") // pending, running, completed, failed
+  startedAt       DateTime  @default(now()) @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+  lastError       String?   @map("last_error")
+  metadata        Json?     // Migration-specific data
+  
+  @@index([tableName, fieldName])
+  @@index([status])
+  @@index([startedAt])
+  @@unique([tableName, fieldName, businessId])
+  @@map("encryption_migrations")
+}

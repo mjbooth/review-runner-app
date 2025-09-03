@@ -1,0 +1,412 @@
+{
+  "info": {
+    "name": "Review Runner API",
+    "description": "Complete API collection for testing Review Runner workflow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{clerk_jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "clerk_jwt_token",
+      "value": "YOUR_CLERK_JWT_TOKEN_HERE"
+    },
+    {
+      "key": "business_id",
+      "value": ""
+    },
+    {
+      "key": "customer_id",
+      "value": ""
+    },
+    {
+      "key": "request_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Testing",
+      "item": [
+        {
+          "name": "API Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Queue Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/test/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test", "health"]
+            }
+          }
+        },
+        {
+          "name": "Test SMS Sending",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+447123456789\",\n  \"message\": \"Test SMS from Review Runner\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/test/sms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test", "sms"]
+            }
+          }
+        },
+        {
+          "name": "Test Email Sending",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"test@example.com\",\n  \"subject\": \"Test Email from Review Runner\",\n  \"content\": \"This is a test email to verify SendGrid integration.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/test/email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test", "email"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Business Management",
+      "item": [
+        {
+          "name": "Get Current Business",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/businesses/current",
+              "host": ["{{base_url}}"],
+              "path": ["api", "businesses", "current"]
+            }
+          }
+        },
+        {
+          "name": "Update Business",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Business Name\",\n  \"email\": \"updated@business.com\",\n  \"phone\": \"+447123456789\",\n  \"googleReviewUrl\": \"https://g.page/your-business/review\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/businesses/current",
+              "host": ["{{base_url}}"],
+              "path": ["api", "businesses", "current"]
+            }
+          }
+        },
+        {
+          "name": "Get Business Usage",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/businesses/current/usage",
+              "host": ["{{base_url}}"],
+              "path": ["api", "businesses", "current", "usage"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Management",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/customers?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customers"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('customer_id', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+447123456789\",\n  \"address\": \"123 Test Street, London, UK\",\n  \"tags\": [\"test\", \"customer\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/customers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customers"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/customers/{{customer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customers", "{{customer_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Review Requests",
+      "item": [
+        {
+          "name": "List Review Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/review-requests?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "review-requests"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create SMS Review Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('request_id', response.data.id);",
+                  "    console.log('Tracking URL:', response.data.trackingUrl);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customer_id}}\",\n  \"channel\": \"SMS\",\n  \"messageContent\": \"Hi {{firstName}}, {{businessName}} would love your feedback! Please leave us a review: {{reviewUrl}}\\n\\nReply STOP to opt out.\",\n  \"reviewUrl\": \"https://g.page/your-business/review\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/review-requests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "review-requests"]
+            }
+          }
+        },
+        {
+          "name": "Create Email Review Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customer_id}}\",\n  \"channel\": \"EMAIL\",\n  \"subject\": \"Share your experience with {{businessName}}\",\n  \"messageContent\": \"<h2>Hi {{firstName}},</h2><p>Thank you for choosing {{businessName}}! We hope you had a great experience with us.</p><p>Would you mind taking a moment to share your experience?</p><p><a href='{{trackingUrl}}' style='background: #0ea5e9; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px;'>Leave a Review</a></p><p><a href='{{unsubscribeUrl}}'>Unsubscribe</a></p>\",\n  \"reviewUrl\": \"https://g.page/your-business/review\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/review-requests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "review-requests"]
+            }
+          }
+        },
+        {
+          "name": "Create Bulk Review Requests",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerIds\": [\"{{customer_id}}\"],\n  \"channel\": \"SMS\",\n  \"messageContent\": \"Hi {{firstName}}, please review {{businessName}}: {{reviewUrl}}\",\n  \"reviewUrl\": \"https://g.page/your-business/review\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/review-requests/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "review-requests", "bulk"]
+            }
+          }
+        },
+        {
+          "name": "Get Review Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/review-requests/{{request_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "review-requests", "{{request_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Dashboard Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/analytics/dashboard?period=30d",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "dashboard"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "30d"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Suppressions",
+      "item": [
+        {
+          "name": "List Suppressions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/suppressions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "suppressions"]
+            }
+          }
+        },
+        {
+          "name": "Add Suppression",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact\": \"test@example.com\",\n  \"channel\": \"EMAIL\",\n  \"reason\": \"MANUAL\",\n  \"notes\": \"Customer requested to be removed from emails\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/suppressions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "suppressions"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

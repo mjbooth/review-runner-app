@@ -1,0 +1,538 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { Modal } from './Modal';
+import { Customer } from '../types';
+import { 
+  Mail, 
+  MessageSquare, 
+  Calendar, 
+  Clock, 
+  Eye, 
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Send,
+  Target,
+  ExternalLink,
+  Copy,
+  User,
+  BarChart3,
+  MessageCircle
+} from 'lucide-react';
+
+interface RequestDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  customer: Customer | null;
+  requestId?: string;
+}
+
+interface RequestDetail {
+  id: string;
+  customerId: string;
+  channel: 'EMAIL' | 'SMS';
+  status: 'QUEUED' | 'SENT' | 'DELIVERED' | 'CLICKED' | 'FAILED' | 'BOUNCED' | 'COMPLETED';
+  template: string;
+  templateType: 'initial' | 'followup' | 'reminder';
+  subject?: string;
+  message: string;
+  sentAt: string | null;
+  deliveredAt: string | null;
+  clickedAt: string | null;
+  completedAt: string | null;
+  scheduledFor: string | null;
+  trackingUrl: string;
+  messageId: string | null;
+  cost: number;
+  metadata: {
+    twilioMessageSid?: string;
+    sendgridMessageId?: string;
+    deliveryAttempts?: number;
+    lastDeliveryAttempt?: string;
+    errorDetails?: string;
+    clickCount?: number;
+    ipAddress?: string;
+    userAgent?: string;
+    location?: string;
+    businessInfo?: {
+      name: string;
+      googlePlaceId?: string;
+      reviewUrl?: string;
+    };
+  };
+  events: RequestEvent[];
+}
+
+interface RequestEvent {
+  id: string;
+  type: 'queued' | 'sent' | 'delivered' | 'clicked' | 'bounced' | 'failed' | 'completed';
+  timestamp: string;
+  details: string;
+  metadata?: Record<string, any>;
+}
+
+export function RequestDetailsModal({
+  isOpen,
+  onClose,
+  customer,
+  requestId
+}: RequestDetailsModalProps) {
+  const [requests, setRequests] = useState<RequestDetail[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<RequestDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'tracking'>('overview');
+
+  useEffect(() => {
+    if (isOpen && customer) {
+      loadRequestDetails();
+    }
+  }, [isOpen, customer, requestId]);
+
+  const loadRequestDetails = async () => {
+    if (!customer) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/customers/${customer.id}/requests${requestId ? `?requestId=${requestId}` : ''}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setRequests(data.data || []);
+        if (data.data?.length > 0) {
+          // If specific requestId provided, select that request
+          if (requestId) {
+            const specificRequest = data.data.find((r: RequestDetail) => r.id === requestId);
+            setSelectedRequest(specificRequest || data.data[0]);
+          } else {
+            setSelectedRequest(data.data[0]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load request details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    showNotification('Copied to clipboard', 'success');
+  };
+
+  const openTrackingUrl = () => {
+    if (selectedRequest?.trackingUrl) {
+      window.open(selectedRequest.trackingUrl, '_blank');
+    }
+  };
+
+  const showNotification = (message: string, type: 'success' | 'error') => {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white max-w-sm ${
+      type === 'success' ? 'bg-green-600' : 'bg-red-600'
+    }`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'QUEUED':
+        return <Clock className="w-4 h-4 text-yellow-600" />;
+      case 'SENT':
+        return <Send className="w-4 h-4 text-blue-600" />;
+      case 'DELIVERED':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'CLICKED':
+        return <Eye className="w-4 h-4 text-purple-600" />;
+      case 'COMPLETED':
+        return <Target className="w-4 h-4 text-green-700" />;
+      case 'FAILED':
+      case 'BOUNCED':
+        return <XCircle className="w-4 h-4 text-red-600" />;
+      default:
+        return <AlertTriangle className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getStatusColorClasses = (status: string) => {
+    switch (status) {
+      case 'QUEUED':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'SENT':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'DELIVERED':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'CLICKED':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'COMPLETED':
+        return 'bg-green-100 text-green-900 border-green-300';
+      case 'FAILED':
+      case 'BOUNCED':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-charcoal border-gray-200';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return `£${(amount / 100).toFixed(2)}`;
+  };
+
+  const formatTemplateType = (type: string) => {
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  };
+
+  if (!customer) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Request Details" size="xl">
+      <div className="space-y-6">
+        {/* Customer Header */}
+        <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+            <User className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-900">
+              {customer.firstName} {customer.lastName}
+            </h3>
+            <p className="text-sm text-gray-500">{customer.email}</p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-gray-600">Loading request details...</span>
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <p>No requests found for this customer</p>
+            <p className="text-sm">Review requests will appear here once sent</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Request List */}
+            <div className="lg:col-span-1">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Requests</h4>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {requests.map((request) => (
+                  <button
+                    key={request.id}
+                    onClick={() => setSelectedRequest(request)}
+                    className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                      selectedRequest?.id === request.id
+                        ? 'border-blue-200 bg-blue-50'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2 mb-2">
+                      {getStatusIcon(request.status)}
+                      <div className="flex items-center space-x-1">
+                        {request.channel === 'EMAIL' ? (
+                          <Mail className="w-3 h-3 text-gray-500" />
+                        ) : (
+                          <MessageSquare className="w-3 h-3 text-gray-500" />
+                        )}
+                        <span className="text-xs text-gray-500">{request.channel}</span>
+                      </div>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">
+                      {formatTemplateType(request.templateType)}
+                    </p>
+                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColorClasses(request.status)}`}>
+                      <span>{request.status}</span>
+                    </div>
+                    {request.sentAt && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formatDate(request.sentAt)}
+                      </p>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Request Details */}
+            <div className="lg:col-span-3">
+              {selectedRequest ? (
+                <div className="space-y-4">
+                  {/* Request Header */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        {getStatusIcon(selectedRequest.status)}
+                        <div>
+                          <h4 className="font-medium text-gray-900">
+                            {formatTemplateType(selectedRequest.templateType)} Request
+                          </h4>
+                          <div className="flex items-center space-x-2 mt-1">
+                            {selectedRequest.channel === 'EMAIL' ? (
+                              <Mail className="w-4 h-4 text-gray-500" />
+                            ) : (
+                              <MessageSquare className="w-4 h-4 text-gray-500" />
+                            )}
+                            <span className="text-sm text-gray-600">{selectedRequest.channel}</span>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-sm text-gray-600">{formatCurrency(selectedRequest.cost)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColorClasses(selectedRequest.status)}`}>
+                        <span>{selectedRequest.status}</span>
+                      </div>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="border-b border-gray-200">
+                      <nav className="flex space-x-8">
+                        {[
+                          { id: 'overview', label: 'Overview', icon: BarChart3 },
+                          { id: 'timeline', label: 'Timeline', icon: Calendar },
+                          { id: 'tracking', label: 'Tracking', icon: ExternalLink }
+                        ].map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                              activeTab === tab.id
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
+                          >
+                            <tab.icon className="w-4 h-4" />
+                            <span>{tab.label}</span>
+                          </button>
+                        ))}
+                      </nav>
+                    </div>
+                  </div>
+
+                  {/* Tab Content */}
+                  {activeTab === 'overview' && (
+                    <div className="space-y-4">
+                      {/* Key Metrics */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-gray-50 p-3 rounded-lg text-center">
+                          <p className="text-sm text-gray-600">Sent</p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {selectedRequest.sentAt ? formatDate(selectedRequest.sentAt) : 'Not sent'}
+                          </p>
+                        </div>
+                        <div className="bg-green-50 p-3 rounded-lg text-center">
+                          <p className="text-sm text-green-600">Delivered</p>
+                          <p className="text-lg font-bold text-green-900">
+                            {selectedRequest.deliveredAt ? formatDate(selectedRequest.deliveredAt) : 'Pending'}
+                          </p>
+                        </div>
+                        <div className="bg-blue-50 p-3 rounded-lg text-center">
+                          <p className="text-sm text-blue-600">Clicked</p>
+                          <p className="text-lg font-bold text-blue-900">
+                            {selectedRequest.clickedAt ? formatDate(selectedRequest.clickedAt) : 'Not clicked'}
+                          </p>
+                        </div>
+                        <div className="bg-purple-50 p-3 rounded-lg text-center">
+                          <p className="text-sm text-purple-600">Completed</p>
+                          <p className="text-lg font-bold text-purple-900">
+                            {selectedRequest.completedAt ? formatDate(selectedRequest.completedAt) : 'Not completed'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Message Content */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-4">
+                        <h5 className="text-sm font-medium text-gray-900 mb-3">Message Content</h5>
+                        {selectedRequest.subject && (
+                          <div className="mb-3">
+                            <p className="text-xs text-gray-600 mb-1">Subject:</p>
+                            <p className="text-sm font-medium text-gray-900">{selectedRequest.subject}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">Message:</p>
+                          <div className="bg-gray-50 p-3 rounded border text-sm text-charcoal whitespace-pre-wrap max-h-32 overflow-y-auto">
+                            {selectedRequest.message}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Business Info */}
+                      {selectedRequest.metadata.businessInfo && (
+                        <div className="bg-white border border-gray-200 rounded-lg p-4">
+                          <h5 className="text-sm font-medium text-gray-900 mb-3">Business Information</h5>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-600">Business Name:</span>
+                              <span className="ml-2 font-medium">{selectedRequest.metadata.businessInfo.name}</span>
+                            </div>
+                            {selectedRequest.metadata.businessInfo.reviewUrl && (
+                              <div>
+                                <span className="text-gray-600">Review URL:</span>
+                                <a
+                                  href={selectedRequest.metadata.businessInfo.reviewUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="ml-2 text-blue-600 hover:text-blue-700 underline"
+                                >
+                                  View on Google
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'timeline' && (
+                    <div className="bg-white border border-gray-200 rounded-lg p-4">
+                      <h5 className="text-sm font-medium text-gray-900 mb-4">Event Timeline</h5>
+                      {selectedRequest.events.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                          <p>No events recorded</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {selectedRequest.events.map((event, index) => (
+                            <div key={event.id} className="relative">
+                              {index < selectedRequest.events.length - 1 && (
+                                <div className="absolute left-4 top-8 w-0.5 h-6 bg-gray-300"></div>
+                              )}
+                              <div className="flex items-start space-x-3">
+                                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                  {getStatusIcon(event.type.toUpperCase())}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-sm font-medium text-gray-900 capitalize">
+                                      {event.type.replace('_', ' ')}
+                                    </p>
+                                    <span className="text-xs text-gray-500">
+                                      {formatDate(event.timestamp)}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mt-1">{event.details}</p>
+                                  {event.metadata && Object.keys(event.metadata).length > 0 && (
+                                    <div className="mt-2 text-xs text-gray-500">
+                                      <details>
+                                        <summary className="cursor-pointer hover:text-gray-700">
+                                          View metadata
+                                        </summary>
+                                        <pre className="mt-1 pl-4 border-l-2 border-gray-200 whitespace-pre-wrap">
+                                          {JSON.stringify(event.metadata, null, 2)}
+                                        </pre>
+                                      </details>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'tracking' && (
+                    <div className="space-y-4">
+                      {/* Tracking URL */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h5 className="text-sm font-medium text-gray-900">Tracking URL</h5>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => copyToClipboard(selectedRequest.trackingUrl)}
+                              className="text-sm text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+                            >
+                              <Copy className="w-3 h-3" />
+                              <span>Copy</span>
+                            </button>
+                            <button
+                              onClick={openTrackingUrl}
+                              className="text-sm text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              <span>Open</span>
+                            </button>
+                          </div>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded border text-sm font-mono break-all">
+                          {selectedRequest.trackingUrl}
+                        </div>
+                      </div>
+
+                      {/* Technical Details */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-4">
+                        <h5 className="text-sm font-medium text-gray-900 mb-3">Technical Information</h5>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="text-gray-600">Request ID:</span>
+                            <span className="ml-2 font-mono text-xs">{selectedRequest.id}</span>
+                          </div>
+                          {selectedRequest.messageId && (
+                            <div>
+                              <span className="text-gray-600">Message ID:</span>
+                              <span className="ml-2 font-mono text-xs">{selectedRequest.messageId}</span>
+                            </div>
+                          )}
+                          {selectedRequest.metadata.twilioMessageSid && (
+                            <div>
+                              <span className="text-gray-600">Twilio SID:</span>
+                              <span className="ml-2 font-mono text-xs">{selectedRequest.metadata.twilioMessageSid}</span>
+                            </div>
+                          )}
+                          {selectedRequest.metadata.sendgridMessageId && (
+                            <div>
+                              <span className="text-gray-600">SendGrid ID:</span>
+                              <span className="ml-2 font-mono text-xs">{selectedRequest.metadata.sendgridMessageId}</span>
+                            </div>
+                          )}
+                          {selectedRequest.metadata.clickCount !== undefined && (
+                            <div>
+                              <span className="text-gray-600">Click Count:</span>
+                              <span className="ml-2 font-medium">{selectedRequest.metadata.clickCount}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <MessageCircle className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p>Select a request to view details</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end pt-4 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-600 hover:text-charcoal transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}

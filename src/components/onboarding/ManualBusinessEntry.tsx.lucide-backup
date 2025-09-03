@@ -1,0 +1,395 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Building2, MapPin, Phone, Globe, Check, X, AlertCircle } from 'lucide-react';
+import { BusinessData } from './BusinessPreviewCard';
+import { cn } from '@/lib/utils';
+
+interface ManualBusinessEntryProps {
+  onSubmit: (businessData: BusinessData) => void;
+  onCancel?: () => void;
+  initialData?: Partial<BusinessData>;
+  isLoading?: boolean;
+  className?: string;
+}
+
+interface FormData {
+  name: string;
+  address: string;
+  phone: string;
+  website: string;
+}
+
+interface FormErrors {
+  name?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  general?: string;
+}
+
+export function ManualBusinessEntry({
+  onSubmit,
+  onCancel,
+  initialData,
+  isLoading = false,
+  className,
+}: ManualBusinessEntryProps) {
+  const [formData, setFormData] = useState<FormData>({
+    name: initialData?.name || '',
+    address: initialData?.address || '',
+    phone: initialData?.phone || '',
+    website: initialData?.website || '',
+  });
+
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touched, setTouched] = useState<Record<keyof FormData, boolean>>({
+    name: false,
+    address: false,
+    phone: false,
+    website: false,
+  });
+
+  // Validation functions
+  const validateRequired = (value: string, fieldName: string): string | undefined => {
+    if (!value.trim()) {
+      return `${fieldName} is required`;
+    }
+    return undefined;
+  };
+
+  const validatePhone = (phone: string): string | undefined => {
+    if (!phone.trim()) return undefined; // Phone is optional
+
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]+$/;
+    if (!phoneRegex.test(phone)) {
+      return 'Please enter a valid phone number';
+    }
+    return undefined;
+  };
+
+  const validateWebsite = (website: string): string | undefined => {
+    if (!website.trim()) return undefined; // Website is optional
+
+    try {
+      const url = new URL(website.startsWith('http') ? website : `https://${website}`);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        return 'Website must be a valid URL';
+      }
+    } catch {
+      return 'Please enter a valid website URL';
+    }
+    return undefined;
+  };
+
+  const validateForm = (): FormErrors => {
+    const newErrors: FormErrors = {};
+
+    // Required fields
+    newErrors.name = validateRequired(formData.name, 'Business name');
+    newErrors.address = validateRequired(formData.address, 'Address');
+
+    // Optional fields with validation
+    newErrors.phone = validatePhone(formData.phone);
+    newErrors.website = validateWebsite(formData.website);
+
+    return newErrors;
+  };
+
+  const handleFieldChange = (field: keyof FormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear field error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleFieldBlur = (field: keyof FormData) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    
+    // Validate field on blur
+    const fieldErrors = validateForm();
+    setErrors(prev => ({ ...prev, [field]: fieldErrors[field] }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const formErrors = validateForm();
+    setErrors(formErrors);
+    setTouched({
+      name: true,
+      address: true,
+      phone: true,
+      website: true,
+    });
+
+    // Check if form has any errors
+    const hasErrors = Object.values(formErrors).some(error => error !== undefined);
+    if (hasErrors) {
+      setErrors(prev => ({ 
+        ...prev, 
+        general: 'Please fix the errors above before continuing' 
+      }));
+      return;
+    }
+
+    // Normalize website URL
+    let normalizedWebsite = formData.website.trim();
+    if (normalizedWebsite && !normalizedWebsite.startsWith('http')) {
+      normalizedWebsite = `https://${normalizedWebsite}`;
+    }
+
+    // Create business data object
+    const businessData: BusinessData = {
+      id: `manual-${Date.now()}`, // Temporary ID
+      name: formData.name.trim(),
+      address: formData.address.trim(),
+      phone: formData.phone.trim() || undefined,
+      website: normalizedWebsite || undefined,
+      // Manual entries won't have rating data initially
+      rating: undefined,
+      reviewCount: undefined,
+      placeId: undefined,
+      googleMapsUrl: undefined,
+      businessHours: undefined,
+      categories: undefined,
+    };
+
+    onSubmit(businessData);
+  };
+
+  const hasError = (field: keyof FormErrors) => Boolean(errors[field] && touched[field]);
+  const getError = (field: keyof FormErrors) => touched[field] ? errors[field] : undefined;
+
+  return (
+    <div className={cn('bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden', className)}>
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+        <h3 className="text-lg font-semibold text-charcoal flex items-center space-x-2">
+          <Building2 className="w-5 h-5 text-forgedorange-500" />
+          <span>Enter Business Details Manually</span>
+        </h3>
+        <p className="text-sm text-gray-600 mt-1">
+          Please provide your business information below. You can update this later.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* General Error */}
+        {errors.general && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-red-500" />
+              <p className="text-sm text-red-700">{errors.general}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Business Name */}
+        <div>
+          <label htmlFor="manual-business-name" className="block text-sm font-semibold text-charcoal mb-2">
+            Business Name <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Building2 className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              id="manual-business-name"
+              value={formData.name}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
+              onBlur={() => handleFieldBlur('name')}
+              placeholder="Enter your business name"
+              className={cn(
+                'w-full pl-10 pr-4 py-3 border rounded-lg text-base transition-colors focus:outline-none focus:ring-2 focus:ring-forgedorange-500 focus:border-transparent',
+                hasError('name')
+                  ? 'border-red-300 bg-red-50'
+                  : 'border-gray-300 bg-white'
+              )}
+              aria-describedby={hasError('name') ? 'name-error' : undefined}
+              required
+            />
+          </div>
+          {hasError('name') && (
+            <p id="name-error" className="mt-2 text-sm text-red-600" role="alert">
+              {getError('name')}
+            </p>
+          )}
+        </div>
+
+        {/* Address */}
+        <div>
+          <label htmlFor="manual-business-address" className="block text-sm font-semibold text-charcoal mb-2">
+            Business Address <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 pt-3 flex items-start pointer-events-none">
+              <MapPin className="h-5 w-5 text-gray-400" />
+            </div>
+            <textarea
+              id="manual-business-address"
+              value={formData.address}
+              onChange={(e) => handleFieldChange('address', e.target.value)}
+              onBlur={() => handleFieldBlur('address')}
+              placeholder="Enter your full business address"
+              rows={3}
+              className={cn(
+                'w-full pl-10 pr-4 py-3 border rounded-lg text-base transition-colors focus:outline-none focus:ring-2 focus:ring-forgedorange-500 focus:border-transparent resize-none',
+                hasError('address')
+                  ? 'border-red-300 bg-red-50'
+                  : 'border-gray-300 bg-white'
+              )}
+              aria-describedby={hasError('address') ? 'address-error' : undefined}
+              required
+            />
+          </div>
+          {hasError('address') && (
+            <p id="address-error" className="mt-2 text-sm text-red-600" role="alert">
+              {getError('address')}
+            </p>
+          )}
+          <p className="mt-2 text-xs text-gray-500">
+            Include street address, city, and postcode for best results
+          </p>
+        </div>
+
+        {/* Phone Number */}
+        <div>
+          <label htmlFor="manual-business-phone" className="block text-sm font-semibold text-charcoal mb-2">
+            Phone Number <span className="text-gray-400">(optional)</span>
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Phone className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="tel"
+              id="manual-business-phone"
+              value={formData.phone}
+              onChange={(e) => handleFieldChange('phone', e.target.value)}
+              onBlur={() => handleFieldBlur('phone')}
+              placeholder="e.g., +44 20 7123 4567"
+              className={cn(
+                'w-full pl-10 pr-4 py-3 border rounded-lg text-base transition-colors focus:outline-none focus:ring-2 focus:ring-forgedorange-500 focus:border-transparent',
+                hasError('phone')
+                  ? 'border-red-300 bg-red-50'
+                  : 'border-gray-300 bg-white'
+              )}
+              aria-describedby={hasError('phone') ? 'phone-error' : undefined}
+            />
+          </div>
+          {hasError('phone') && (
+            <p id="phone-error" className="mt-2 text-sm text-red-600" role="alert">
+              {getError('phone')}
+            </p>
+          )}
+        </div>
+
+        {/* Website */}
+        <div>
+          <label htmlFor="manual-business-website" className="block text-sm font-semibold text-charcoal mb-2">
+            Website <span className="text-gray-400">(optional)</span>
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Globe className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="url"
+              id="manual-business-website"
+              value={formData.website}
+              onChange={(e) => handleFieldChange('website', e.target.value)}
+              onBlur={() => handleFieldBlur('website')}
+              placeholder="e.g., www.yourbusiness.com"
+              className={cn(
+                'w-full pl-10 pr-4 py-3 border rounded-lg text-base transition-colors focus:outline-none focus:ring-2 focus:ring-forgedorange-500 focus:border-transparent',
+                hasError('website')
+                  ? 'border-red-300 bg-red-50'
+                  : 'border-gray-300 bg-white'
+              )}
+              aria-describedby={hasError('website') ? 'website-error' : undefined}
+            />
+          </div>
+          {hasError('website') && (
+            <p id="website-error" className="mt-2 text-sm text-red-600" role="alert">
+              {getError('website')}
+            </p>
+          )}
+        </div>
+
+        {/* Info Notice */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-700">
+              <p className="font-medium mb-1">Why do we need this information?</p>
+              <ul className="text-xs space-y-1">
+                <li>• We'll use this to create your business profile</li>
+                <li>• Customers will see this information in review requests</li>
+                <li>• You can update all details later in your dashboard</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-gray-200">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isLoading}
+              className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:border-gray-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <X className="w-4 h-4" />
+              <span>Cancel</span>
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-forgedorange-500 text-white text-sm font-medium rounded-lg hover:bg-forgedorange-600 focus:outline-none focus:border-forgedorange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-initial"
+          >
+            <Check className="w-4 h-4" />
+            <span>{isLoading ? 'Creating Profile...' : 'Create Business Profile'}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// Helper component for showing manual entry as an option
+interface ManualEntryPromptProps {
+  onManualEntry: () => void;
+  className?: string;
+}
+
+export function ManualEntryPrompt({ onManualEntry, className }: ManualEntryPromptProps) {
+  return (
+    <div className={cn('text-center p-4', className)}>
+      <div className="bg-gray-50 rounded-lg p-6 space-y-3">
+        <Building2 className="w-8 h-8 text-gray-400 mx-auto" />
+        <div>
+          <h4 className="text-sm font-medium text-gray-900 mb-1">
+            Can't find your business?
+          </h4>
+          <p className="text-xs text-gray-600 mb-4">
+            No problem! You can enter your business details manually and we'll help you get set up.
+          </p>
+          <button
+            type="button"
+            onClick={onManualEntry}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-forgedorange-500 text-white text-sm font-medium rounded-md hover:bg-forgedorange-600 focus:outline-none focus:border-forgedorange-700 transition-colors"
+          >
+            <MapPin className="w-4 h-4" />
+            <span>Enter Business Details</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

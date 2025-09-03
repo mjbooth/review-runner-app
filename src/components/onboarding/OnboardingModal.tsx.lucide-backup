@@ -1,0 +1,211 @@
+'use client';
+
+import React, { useEffect } from 'react';
+import { Modal } from '@/components/dashboard/customers/components/Modal';
+import { OnboardingStatus, OnboardingStep, StepValidationFunction } from '@/hooks/useOnboarding';
+import { 
+  Building2, 
+  CheckCircle, 
+  Circle, 
+  ChevronRight, 
+  ChevronLeft,
+  Loader2,
+  Info
+} from 'lucide-react';
+
+interface OnboardingModalProps {
+  isOpen: boolean;
+  onboardingStatus: OnboardingStatus;
+  currentStep: number;
+  totalSteps: number;
+  steps: OnboardingStep[];
+  completedSteps: number[];
+  isLoading: boolean;
+  canGoBack: boolean;
+  canGoNext: boolean;
+  isFirstStep: boolean;
+  isLastStep: boolean;
+  onNextStep: (validate?: StepValidationFunction) => Promise<void>;
+  onPreviousStep: () => void;
+  onCompleteOnboarding: () => Promise<void>;
+  stepValidation?: StepValidationFunction;
+  children?: React.ReactNode;
+}
+
+export function OnboardingModal({
+  isOpen,
+  onboardingStatus,
+  currentStep,
+  totalSteps,
+  steps,
+  completedSteps,
+  isLoading,
+  canGoBack,
+  canGoNext,
+  isFirstStep,
+  isLastStep,
+  onNextStep,
+  onPreviousStep,
+  onCompleteOnboarding,
+  stepValidation,
+  children,
+}: OnboardingModalProps) {
+  // Prevent escape key from closing modal (non-dismissible)
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen]);
+
+  const currentStepData = steps[currentStep];
+
+  // Step Indicator Sidebar Component - matching CreateReviewRequestModal
+  const StepSidebar = () => (
+    <div className="w-80 bg-[#f0f0f0] p-6 flex flex-col h-full">
+      <div className="space-y-6">
+        {/* Title */}
+        <div>
+          <h2 className="text-xl font-bold text-charcoal">Business Setup</h2>
+        </div>
+
+        {/* Current Step Info - matching customer info section */}
+        <div className="bg-white rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <Building2 className="w-4 h-4 text-gray-600" />
+            <span className="text-sm font-medium text-charcoal">
+              Onboarding Progress
+            </span>
+          </div>
+          <div className="space-y-1 text-sm font-light text-[#6b7280]">
+            <div>Setting up your business profile</div>
+            <div>Step {currentStep + 1} of {totalSteps}</div>
+          </div>
+        </div>
+
+        {/* Steps Progress - matching CreateReviewRequestModal step format */}
+        <div className="space-y-3">
+          {steps.map((step, index) => {
+            const isCompleted = completedSteps.includes(index);
+            const isCurrent = index === currentStep;
+
+            return (
+              <div key={index} className="flex items-center justify-between">
+                {isCompleted && !isCurrent ? (
+                  <span className="font-medium text-base text-[#d97706] cursor-pointer transition-colors text-left">
+                    {index + 1}. {step.title}
+                  </span>
+                ) : (
+                  <span className="font-medium text-base text-charcoal">
+                    {index + 1}. {step.title}
+                  </span>
+                )}
+                <div className={`
+                  w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                  ${isCompleted && !isCurrent ? 'bg-[#d97706] text-white' : 'bg-[#e5e7eb] text-[#6b7280]'}
+                `}>
+                  {isCompleted && !isCurrent ? '✓' : ''}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Validation Messages at Bottom - matching CreateReviewRequestModal */}
+      <div className="mt-auto pt-4">
+        {!canGoNext && !isLoading && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <div className="flex items-center space-x-2 text-amber-700 mb-2">
+              <Info className="w-4 h-4 flex-shrink-0" />
+              <span className="text-xs font-medium">Please complete:</span>
+            </div>
+            <ul className="ml-6 text-xs text-amber-600 space-y-1">
+              <li>• Complete the current step to continue</li>
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Don't render anything if modal is closed
+  if (!isOpen) return null;
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={() => {}} // Non-dismissible
+      title=""
+      size="custom"
+      className="w-[1116px] max-w-[90vw] max-h-[90vh] overflow-hidden bg-[#f9f7f3] rounded-2xl"
+      showHeader={false}
+    >
+      <div className="flex h-[90vh] bg-[#f9f7f3] relative">
+        {/* Left Sidebar */}
+        <StepSidebar />
+
+        {/* Main Content */}
+        <div className="flex-1 p-6 overflow-y-auto bg-[#f9f7f3] pb-20">
+          {children || (
+            <div className="min-h-[300px] flex items-center justify-center text-gray-500">
+              <p>Onboarding content goes here</p>
+            </div>
+          )}
+        </div>
+
+        {/* Fixed Navigation Buttons - matching CreateReviewRequestModal */}
+        <div className="absolute bottom-0 right-0 left-80 bg-[#f9f7f3] p-3">
+          <div className="flex justify-between items-center px-3">
+            <button
+              onClick={onPreviousStep}
+              disabled={!canGoBack || isLoading}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={() => {
+                if (isLastStep) {
+                  onCompleteOnboarding();
+                } else {
+                  onNextStep(stepValidation);
+                }
+              }}
+              disabled={!canGoNext || isLoading}
+              className={`
+                px-6 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors
+                ${canGoNext && !isLoading
+                  ? 'bg-[#2563eb] text-white hover:bg-[#1d4ed8]'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                }
+              `}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : isLastStep ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Complete Setup</span>
+                </>
+              ) : (
+                <>
+                  <span>Continue</span>
+                  <ChevronRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}

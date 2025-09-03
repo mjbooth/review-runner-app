@@ -1,0 +1,7 @@
+{
+  "customerId": "d3a4acb8-06c5-4457-ae1b-610ee003da7c",
+  "channel": "EMAIL",
+  "reviewUrl": "https://g.page/test-business/review",
+  "messageContent": "Hi {{firstName}}, please leave us a review!",
+  "subject": "Please share your experience"
+}
